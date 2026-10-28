@@ -1,0 +1,323 @@
+<title>노베토플 빈칸 철자 훈련</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+Mono:wght@400;500&display=swap">
+<style>
+/* 레이아웃 — 한 번에 한 낱말. 머리에 DAY 와 진행 막대, 가운데에 철자 칸,
+   아래에 자판과 힌트. 칸 수가 곧 글자 수라 눈으로 길이를 먼저 잡는다. */
+:root{
+  --s1:#D1522B; --s1-fill:#FF8D6D; --s1-tint:#FFF1EB;
+  --s2:#004871; --s2-fill:#003A5D; --s2-tint:#E8F0F6;
+  --bg:#FDFAF8; --surf:#FFFFFF; --fg:#1B1512; --mut:#7C6C64;
+  --faint:#A99A93; --line:#EDE2DC;
+  --ok:#2E7D5B; --ok-t:#E6F3EC; --no:#B3402E; --no-t:#FBEAE6;
+  --spot:var(--s1); --spot-fill:var(--s1-fill); --spot-tint:var(--s1-tint);
+  --f-word:"Lora",Georgia,serif;
+  --f-ui:"Noto Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+  --f-mono:"Noto Sans Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  --r:12px;
+  --gut:max(16px, env(safe-area-inset-left, 0px));
+  --gut-r:max(16px, env(safe-area-inset-right, 0px));
+}
+body[data-book="2"]{ --spot:var(--s2); --spot-fill:var(--s2-fill); --spot-tint:var(--s2-tint) }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --s1:#FFA98E; --s1-fill:#FF8D6D; --s1-tint:#2C1C16;
+  --s2:#86C2E6; --s2-fill:#5AA7D4; --s2-tint:#122531;
+  --bg:#141110; --surf:#1D1917; --fg:#F3ECE8; --mut:#A6968E;
+  --faint:#7E6F68; --line:#2F2825;
+  --ok:#6BC79B; --ok-t:#14291F; --no:#F09080; --no-t:#301A16;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --s1:#FFA98E; --s1-fill:#FF8D6D; --s1-tint:#2C1C16;
+  --s2:#86C2E6; --s2-fill:#5AA7D4; --s2-tint:#122531;
+  --bg:#141110; --surf:#1D1917; --fg:#F3ECE8; --mut:#A6968E;
+  --faint:#7E6F68; --line:#2F2825;
+  --ok:#6BC79B; --ok-t:#14291F; --no:#F09080; --no-t:#301A16;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--spot-fill)}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--spot-fill);color:#fff}
+.top-in{padding-left:var(--gut);padding-right:var(--gut-r);padding-block:10px;display:flex;flex-direction:column;gap:9px}
+.brand{display:flex;align-items:baseline;gap:8px}
+.brand b{font-size:15px;font-weight:700}
+.brand span{font-size:11.5px;opacity:.8;font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
+.books{display:flex;gap:6px}
+.books button{flex:1;border:0;border-radius:999px;cursor:pointer;font-family:var(--f-ui);font-size:12.5px;font-weight:500;padding:7px 4px;background:rgba(255,255,255,.22);color:#fff}
+.books button[aria-selected="true"]{background:#fff;color:var(--spot);font-weight:700}
+.days{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.days::-webkit-scrollbar{display:none}
+.days button{flex:0 0 auto;border:0;border-radius:8px;cursor:pointer;font-family:var(--f-mono);font-size:12px;padding:6px 9px;background:rgba(255,255,255,.18);color:#fff;white-space:nowrap}
+.days button[aria-current="true"]{background:#fff;color:var(--spot);font-weight:700}
+.days button.done::after{content:" ✓";font-size:10px}
+
+main{padding-left:var(--gut);padding-right:var(--gut-r);padding-block:16px 44px;display:flex;flex-direction:column;gap:16px;max-width:560px;margin:0 auto}
+
+.meta{display:flex;align-items:center;gap:10px}
+.meta em{font-style:normal;font-family:var(--f-mono);font-size:11.5px;color:var(--spot);letter-spacing:.06em}
+.meta .num{margin-left:auto;font-family:var(--f-mono);font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.prog{height:3px;border-radius:2px;background:var(--line);overflow:hidden;margin-top:-10px}
+.prog i{display:block;height:100%;background:var(--spot-fill);transition:width .25s}
+
+.stage{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:22px 16px;display:flex;flex-direction:column;gap:16px;align-items:center}
+.slots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.slot{
+  width:26px;height:38px;border-bottom:2px solid var(--line);
+  font-family:var(--f-mono);font-size:21px;font-weight:500;
+  display:grid;place-items:center;color:var(--fg);
+}
+.slot.given{color:var(--faint);border-bottom-color:var(--faint)}
+.slot.fill{border-bottom-color:var(--spot)}
+.slot.dash{border-bottom:0;width:12px;color:var(--faint)}
+.stage.right .slot{color:var(--ok);border-bottom-color:var(--ok)}
+.stage.wrong .slot{color:var(--no);border-bottom-color:var(--no)}
+
+.typein{width:100%;max-width:320px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:11px 13px;font-family:var(--f-mono);font-size:17px;text-align:center;letter-spacing:.08em}
+.typein:focus-visible{outline:2px solid var(--spot);outline-offset:2px}
+.verdict{min-height:22px;font-size:13.5px;font-weight:500;text-align:center}
+.verdict.right{color:var(--ok)}
+.verdict.wrong{color:var(--no)}
+.verdict b{font-family:var(--f-word);font-size:16px}
+
+.acts{display:flex;gap:8px;width:100%;max-width:320px}
+.acts button{flex:1;border-radius:10px;padding:11px 6px;font-family:var(--f-ui);font-size:13.5px;cursor:pointer;border:1px solid var(--line);background:var(--surf);color:var(--mut)}
+.acts button.go{background:var(--spot-fill);border-color:var(--spot-fill);color:#fff;font-weight:700}
+body[data-book="2"] .acts button.go{color:#fff}
+.acts button:focus-visible,.books button:focus-visible,.days button:focus-visible{outline:2px solid var(--spot);outline-offset:2px}
+
+.sheet{display:flex;flex-direction:column;gap:7px}
+.sheet h2{margin:0;font-size:13px;font-weight:500;color:var(--mut)}
+.marks{display:flex;flex-wrap:wrap;gap:5px}
+.mk{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);color:var(--faint);background:var(--surf)}
+.mk.right{background:var(--ok-t);border-color:var(--ok);color:var(--ok)}
+.mk.wrong{background:var(--no-t);border-color:var(--no);color:var(--no)}
+.mk.now{border-color:var(--spot);color:var(--spot);font-weight:700}
+
+.done{background:var(--spot-tint);border-radius:var(--r);padding:18px 16px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+.done b{font-size:26px;font-family:var(--f-mono);color:var(--spot)}
+.done p{margin:0;font-size:13.5px;color:var(--mut)}
+.wrongs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.wrongs span{font-family:var(--f-word);font-size:13.5px;background:var(--surf);border:1px solid var(--line);border-radius:7px;padding:4px 9px}
+.foot{color:var(--faint);font-size:11.5px;text-align:center;padding-top:14px;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><b>빈칸 철자 훈련</b><span>Spelling</span></div>
+    <div class="books" role="tablist" aria-label="권">
+      <button role="tab" id="bk1" aria-selected="true">실용 · DAY 01–21</button>
+      <button role="tab" id="bk2" aria-selected="false">학술 · DAY 22–42</button>
+    </div>
+    <div class="days" id="days" role="tablist" aria-label="DAY"></div>
+  </div>
+</header>
+
+<main id="main"><p class="foot">불러오는 중입니다.</p></main>
+
+<script id="DATA" type="application/json">{"days":[{"day":1,"topic":"캠퍼스·학업","book":1,"words":["ability","abroad","accumulation","acquisition","activities","adaptations","adapted","addresses","advanced","advantageous","affecting","against"]},{"day":2,"topic":"캠퍼스·학업","book":1,"words":["aiming","allowing","almost","along","amount","ancestors","animals","appears","approach","archaeologists","architecture","areas"]},{"day":3,"topic":"업무·직장","book":1,"words":["around","artisans","artistic","artists","aspects","associated","aware","away","back","based","basic","becomes"]},{"day":4,"topic":"업무·직장","book":1,"words":["bees","begin","beliefs","believe","beneath","better","birth","blood","blooming","blue","bodies","boosted"]},{"day":5,"topic":"실용 빈출 형용사","book":1,"words":["brain","breaking","built","burning","businesses","busy","called","camels","cameras","carve","catastrophic","cats"]},{"day":6,"topic":"실용 빈출 형용사","book":1,"words":["causes","cells","centimeter","centuries","changes","characterized","chemical","choices","cities","climate","clothing","coastlines"]},{"day":7,"topic":"실용 빈출 형용사","book":1,"words":["colder","collected","colonies","combines","common","commonly","communicate","communities","compelling","compounds","concentration","conclusions"]},{"day":8,"topic":"행사·여가","book":1,"words":["conditions","connect","connection","consideration","considered","consists","constrain","construct","conversely","cooking","cotton","creating"]},{"day":9,"topic":"행사·여가","book":1,"words":["creations","critical","cultural","cultures","currents","cycling","daily","damage","dancing","debates","declined","decorative"]},{"day":10,"topic":"주거·생활·소비","book":1,"words":["decreases","deeply","define","democracy","derives","describe","desert","designed","despite","destructive","deteriorate","developed"]},{"day":11,"topic":"주거·생활·소비","book":1,"words":["developments","different","directors","discipline","discovering","disease","distance","diversifying","diversity","dominated","drama","drive"]},{"day":12,"topic":"주거·생활·소비","book":1,"words":["driven","Earth","earthquakes","easier","ecological","economic","ecosystems","education","effects","efforts","eggs","employ"]},{"day":13,"topic":"실용 빈출 동사","book":1,"words":["employment","enables","encompasses","encouraging","energy","enhances","enriching","enters","environments","equipped","eras","eruptions"]},{"day":14,"topic":"실용 빈출 동사","book":1,"words":["escape","established","establishment","European","evaluating","events","evidence","evolved","examines","example","excess","exemplified"]},{"day":15,"topic":"실용 빈출 동사","book":1,"words":["exerted","exhibits","expensive","experienced","experiment","explains","exploit","expression","extremely","facilities","factories","factors"]},{"day":16,"topic":"이동·소통","book":1,"words":["family","features","feeding","field","first","fish","flourished","flower","fluctuate","food","footprints","formation"]},{"day":17,"topic":"이동·소통","book":1,"words":["forming","found","foundation","fuels","full","functional","functions","galaxies","geologists","gets","globe","governing"]},{"day":18,"topic":"실용 빈출 명사·부사","book":1,"words":["governments","greatest","greenhouse","groups","growth","guides","habitats","hand","harsh","hazard","health","heated"]},{"day":19,"topic":"실용 빈출 명사·부사","book":1,"words":["helps","hibernation","historical","history","hormone","hosts","however","humans","hunted","ideas","identifying","identity"]},{"day":20,"topic":"생활 실무 — 식당·건강·돈","book":1,"words":["illegal","illness","impacts","importance","improves","incidents","includes","incoming","increase","individuals","inductive","influenced"]},{"day":21,"topic":"생활 실무 — 식당·건강·돈","book":1,"words":["influx","information","inhabit","innovative","institutions","interact","interest","introduced","invertebrates","investigate","investigations","involved"]},{"day":22,"topic":"사회·심리","book":2,"words":["jigsaw","keep","kinds","knowledge","known","land","languages","large","later","latitude","layer","learn"]},{"day":23,"topic":"사회·심리","book":2,"words":["leaving","legs","life","light","literature","little","lived","locations","logical","long","longer","look"]},{"day":24,"topic":"사회·심리","book":2,"words":["losses","lyrics","made","males","manage","marine","marked","masks","materials","matter","meaning","meat"]},{"day":25,"topic":"학술 빈출 형용사","book":2,"words":["mechanical","mechanisms","memory","minerals","mirror","missions","models","mountains","move","movements","multiple","natural"]},{"day":26,"topic":"학술 빈출 형용사","book":2,"words":["nature","necessity","needed","nutrients","nuts","observations","oceans","often","once","organisms","originated"]},{"day":27,"topic":"생명·의학","book":2,"words":["paintings","paleontologists","particularly","parts","patterns","peace","peers","people","periods","physical","pioneered"]},{"day":28,"topic":"생명·의학","book":2,"words":["places","planets","planting","played","policies","political","pollen","poor","populations","pots","powerful"]},{"day":29,"topic":"생명·의학","book":2,"words":["practices","predict","primary","principles","private","processes","produced","product","production","professionals","programs"]},{"day":30,"topic":"학술 빈출 동사·명사 ①","book":2,"words":["promoting","protect","provides","purposefully","push","rain","range","rapidly","reached","reasoning","recipients"]},{"day":31,"topic":"학술 빈출 동사·명사 ①","book":2,"words":["record","redefined","reduce","reefs","regions","regularly","related","remains","remarkable","removing","renewed"]},{"day":32,"topic":"학술 빈출 동사·명사 ①","book":2,"words":["replenishes","requires","researchers","reshaped","resources","retrieves","reveals","rhythm","riders","rise","rituals"]},{"day":33,"topic":"학술 빈출 동사·명사 ①","book":2,"words":["rocks","roles","Romans","safe","safely","save","science","scientists","seasons","selective","sensors"]},{"day":34,"topic":"예술·문학·역사","book":2,"words":["serve","service","several","severe","sewage","shaped","shells","shelter","signals","significantly","silk"]},{"day":35,"topic":"예술·문학·역사","book":2,"words":["simple","sites","skills","small","smallest","social","socially","societies","sounds","sources","space"]},{"day":36,"topic":"학술 빈출 동사·명사 ②","book":2,"words":["spanning","specific","specifically","speech","spiritual","spread","spring","square","start","state","stores"]},{"day":37,"topic":"학술 빈출 동사·명사 ②","book":2,"words":["strategies","stretch","strong","structures","students","studying","style","submerged","sunlight","support","surfaces"]},{"day":38,"topic":"지구·환경·물리","book":2,"words":["surprise","sustained","system","systematically","technical","techniques","technological","technologies","tell","temperature","thinking"]},{"day":39,"topic":"지구·환경·물리","book":2,"words":["thought","thousands","times","tiny","together","trade","traditions","transforms","transportation","travels","trends"]},{"day":40,"topic":"지구·환경·물리","book":2,"words":["turtles","types","typically","undergo","underground","understand","underwater","unearthing","used","usually","valleys"]},{"day":41,"topic":"기술·공학·경제","book":2,"words":["various","vary","vegetables","visitors","visual","voyages","warms","warmth","water","ways","weapons"]},{"day":42,"topic":"기술·공학·경제","book":2,"words":["wheels","widely","wind","window","wood","words","work","workers","worldwide","years","yourself"]}]}</script>
+<script>
+(function(){
+  "use strict";
+  var SET="novetoefl-blank-set", SC="novetoefl-blank-score";
+  var DAYS=null, book=1, day=1, pos=0, marks=[], answered=false;
+  var saved=load(SET,{}), score=load(SC,{});
+  if(saved.book)book=saved.book; if(saved.day)day=saved.day;
+
+  function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+  function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  function el(t,c,x){var n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n}
+  function pad(n){return String(n).padStart(2,"0")}
+
+  var $days=document.getElementById("days"), $main=document.getElementById("main");
+
+  var tag=document.getElementById("DATA"), raw=tag?tag.textContent.trim():"";
+  (raw ? Promise.resolve(JSON.parse(raw))
+       : fetch("data/blank.json").then(function(r){return r.json()})
+  ).then(function(j){ DAYS=j.days; start(); })
+   .catch(function(){ $main.innerHTML='<p class="foot">불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.</p>' });
+
+  function daysOf(b){return DAYS.filter(function(d){return d.book===b})}
+  function cur(){return DAYS.filter(function(d){return d.day===day})[0] || daysOf(book)[0]}
+
+  /* 앞 절반을 보여 주고 뒤 절반을 비운다 — 원고의 빈칸 문항이 쓰는 방식
+     그대로다 (survey → sur___, appreciate → appre_____).
+     글자 수의 절반을 내림해서 앞에서부터 센다. */
+  function shown(w){
+    var n=w.replace(/[^A-Za-z]/g,"").length;
+    var give=Math.max(1, Math.floor(n/2));
+    var out=[], seen=0;
+    for(var i=0;i<w.length;i++){
+      if(!/[A-Za-z]/.test(w[i])){ out.push(i); continue }
+      if(seen<give){ out.push(i); seen++ }
+    }
+    return out;
+  }
+
+  function buildDays(){
+    $days.innerHTML="";
+    daysOf(book).forEach(function(d){
+      var b=el("button",null,"DAY "+pad(d.day));
+      b.setAttribute("role","tab");
+      b.setAttribute("aria-current", d.day===day?"true":"false");
+      if(score["d"+d.day]) b.classList.add("done");
+      b.onclick=function(){day=d.day;persist();start();window.scrollTo(0,0)};
+      $days.appendChild(b);
+    });
+    var c=$days.querySelector('[aria-current="true"]');
+    if(c)c.scrollIntoView({block:"nearest",inline:"center"});
+  }
+  function persist(){save(SET,{book:book,day:day})}
+
+  function start(){ pos=0; marks=[]; answered=false; buildDays(); render() }
+
+  function render(){
+    document.body.dataset.book=book;
+    var d=cur(); day=d.day;
+    $main.innerHTML="";
+    if(pos>=d.words.length){ return finish(d) }
+
+    var w=d.words[pos];
+    var m=el("div","meta");
+    m.appendChild(el("em",null,"DAY "+pad(d.day)));
+    m.appendChild(el("span",null,d.topic));
+    m.appendChild(el("span","num",(pos+1)+" / "+d.words.length));
+    $main.appendChild(m);
+    var pr=el("div","prog"), bi=el("i");
+    bi.style.width=(pos/d.words.length*100)+"%"; pr.appendChild(bi);
+    $main.appendChild(pr);
+
+    var st=el("div","stage");
+    var slots=el("div","slots"); st.appendChild(slots);
+    var give=shown(w);
+    function paint(typed, state){
+      slots.innerHTML="";
+      for(var i=0;i<w.length;i++){
+        var ch=w[i];
+        if(ch===" "||ch==="-"){ slots.appendChild(el("span","slot dash",ch==="-"?"-":"")); continue }
+        var on=give.indexOf(i)>-1;
+        var v = state ? ch : (on ? ch : (typed[i]||""));
+        var s=el("span","slot"+(on?" given":"")+(!on&&typed[i]?" fill":""), v);
+        slots.appendChild(s);
+      }
+      st.className="stage"+(state?(" "+state):"");
+    }
+    paint("",null);
+
+    var inp=el("input","typein");
+    inp.type="text"; inp.id="type-"+d.day+"-"+pos;
+    inp.autocapitalize="off"; inp.autocorrect="off"; inp.spellcheck=false;
+    inp.setAttribute("autocomplete","off");
+    inp.placeholder="낱말을 적어 보세요";
+    inp.setAttribute("aria-label","철자 입력");
+    st.appendChild(inp);
+
+    var vd=el("p","verdict"); st.appendChild(vd);
+
+    var acts=el("div","acts");
+    var hint=el("button",null,"힌트");
+    var go=el("button","go","확인");
+    acts.appendChild(hint); acts.appendChild(go);
+    st.appendChild(acts);
+    $main.appendChild(st);
+
+    inp.addEventListener("input",function(){ if(!answered) paint(inp.value.toLowerCase(),null) });
+    inp.addEventListener("keydown",function(e){ if(e.key==="Enter") go.click() });
+
+    // 힌트 — 비워 둔 자리를 앞에서부터 한 글자씩 연다
+    hint.onclick=function(){
+      if(answered) return;
+      for(var i=0;i<w.length;i++){
+        if(give.indexOf(i)===-1){ give.push(i); break }
+      }
+      paint(inp.value.toLowerCase(),null); inp.focus();
+    };
+
+    go.onclick=function(){
+      if(answered){ pos++; render(); return }
+      var got=inp.value.trim().toLowerCase(), ok=(got===w.toLowerCase());
+      answered=true; marks.push(ok?1:0);
+      paint(w, ok?"right":"wrong");
+      vd.className="verdict "+(ok?"right":"wrong");
+      vd.innerHTML = ok ? "맞았습니다" : ("정답은 <b>"+esc(w)+"</b> 입니다");
+      go.textContent = (pos+1>=d.words.length) ? "결과 보기" : "다음";
+      hint.disabled=true; inp.disabled=true;
+      answered=true;
+      paintSheet();
+      go.focus();
+      answered=true;
+    };
+
+    var sheet=el("div","sheet");
+    sheet.appendChild(el("h2",null,"오늘의 12낱말"));
+    var mk=el("div","marks"); mk.id="marks"; sheet.appendChild(mk);
+    $main.appendChild(sheet);
+    paintSheet();
+
+    $main.appendChild(el("p","foot","원고의 빈칸 어휘 487 · DAY 마다 12"));
+    setTimeout(function(){inp.focus()},30);
+
+    function paintSheet(){
+      var box=document.getElementById("marks"); if(!box)return;
+      box.innerHTML="";
+      for(var i=0;i<d.words.length;i++){
+        var c = i<marks.length ? (marks[i]?"mk right":"mk wrong") : (i===pos?"mk now":"mk");
+        box.appendChild(el("span",c,String(i+1)));
+      }
+    }
+  }
+
+  function finish(d){
+    var right=marks.filter(function(x){return x}).length;
+    score["d"+d.day]={right:right,of:d.words.length}; save(SC,score);
+    buildDays();
+    var m=el("div","meta");
+    m.appendChild(el("em",null,"DAY "+pad(d.day)));
+    m.appendChild(el("span",null,d.topic));
+    $main.appendChild(m);
+
+    var box=el("div","done");
+    box.appendChild(el("b",null,right+" / "+d.words.length));
+    box.appendChild(el("p",null, right===d.words.length
+      ? "열두 낱말 모두 맞았습니다." : "틀린 낱말을 한 번 더 보고 가세요."));
+    var bad=d.words.filter(function(_w,i){return marks[i]===0});
+    if(bad.length){
+      var ws=el("div","wrongs");
+      bad.forEach(function(w){ws.appendChild(el("span",null,w))});
+      box.appendChild(ws);
+    }
+    var acts=el("div","acts");
+    var again=el("button","go","다시 풀기");
+    again.onclick=function(){start();window.scrollTo(0,0)};
+    acts.appendChild(again);
+    var next=el("button",null,"다음 DAY");
+    var list=daysOf(book), at=list.map(function(x){return x.day}).indexOf(d.day);
+    next.disabled = at<0 || at+1>=list.length;
+    next.onclick=function(){day=list[at+1].day;persist();start();window.scrollTo(0,0)};
+    acts.appendChild(next);
+    box.appendChild(acts);
+    $main.appendChild(box);
+    $main.appendChild(el("p","foot","원고의 빈칸 어휘 487 · DAY 마다 12"));
+  }
+
+  function esc(s){return s.replace(/[&<>"]/g,function(ch){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]})}
+
+  function pick(b){
+    if(book===b)return;
+    book=b; day=daysOf(b)[0].day;
+    document.getElementById("bk1").setAttribute("aria-selected", b===1?"true":"false");
+    document.getElementById("bk2").setAttribute("aria-selected", b===2?"true":"false");
+    persist(); start(); window.scrollTo(0,0);
+  }
+  document.getElementById("bk1").onclick=function(){pick(1)};
+  document.getElementById("bk2").onclick=function(){pick(2)};
+  document.getElementById("bk1").setAttribute("aria-selected", book===1?"true":"false");
+  document.getElementById("bk2").setAttribute("aria-selected", book===2?"true":"false");
+})();
+</script>

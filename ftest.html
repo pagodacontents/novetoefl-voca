@@ -1,0 +1,480 @@
+<title>노베토플 FINAL TEST</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+Mono:wght@400;500&display=swap">
+<style>
+/* 레이아웃 — 한 번에 한 문항. 머리에 회차와 진행 막대, 가운데에 문항,
+   아래에 답안지 눈금. 세 유형의 답하는 꼴이 달라 답란만 갈아 끼운다.
+     A 뜻쓰기   낱말을 보고 뜻 고르기 (네 갈래)
+     B 동의어   문장 속 낱말을 바꿔 쓸 말 고르기 (워드뱅크)
+     C 빈칸     앞 절반만 열린 철자를 채워 넣기 */
+:root{
+  --s1:#D1522B; --s1-fill:#FF8D6D; --s1-tint:#FFF1EB;
+  --s2:#004871; --s2-fill:#003A5D; --s2-tint:#E8F0F6;
+  --bg:#FDFAF8; --surf:#FFFFFF; --fg:#1B1512; --mut:#7C6C64;
+  --faint:#A99A93; --line:#EDE2DC;
+  --ok:#2E7D5B; --ok-t:#E6F3EC; --no:#B3402E; --no-t:#FBEAE6;
+  --spot:var(--s1); --spot-fill:var(--s1-fill); --spot-tint:var(--s1-tint);
+  --f-word:"Lora",Georgia,serif;
+  --f-ui:"Noto Sans KR",system-ui,-apple-system,"Malgun Gothic",sans-serif;
+  --f-mono:"Noto Sans Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  --r:12px;
+  --gut:max(16px, env(safe-area-inset-left, 0px));
+  --gut-r:max(16px, env(safe-area-inset-right, 0px));
+}
+body[data-book="2"]{ --spot:var(--s2); --spot-fill:var(--s2-fill); --spot-tint:var(--s2-tint) }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --s1:#FFA98E; --s1-fill:#FF8D6D; --s1-tint:#2C1C16;
+  --s2:#86C2E6; --s2-fill:#5AA7D4; --s2-tint:#122531;
+  --bg:#141110; --surf:#1D1917; --fg:#F3ECE8; --mut:#A6968E;
+  --faint:#7E6F68; --line:#2F2825;
+  --ok:#6BC79B; --ok-t:#14291F; --no:#F09080; --no-t:#301A16; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --s1:#FFA98E; --s1-fill:#FF8D6D; --s1-tint:#2C1C16;
+  --s2:#86C2E6; --s2-fill:#5AA7D4; --s2-tint:#122531;
+  --bg:#141110; --surf:#1D1917; --fg:#F3ECE8; --mut:#A6968E;
+  --faint:#7E6F68; --line:#2F2825;
+  --ok:#6BC79B; --ok-t:#14291F; --no:#F09080; --no-t:#301A16; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--spot-fill)}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--spot-fill);color:#fff}
+.top-in{padding-left:var(--gut);padding-right:var(--gut-r);padding-block:10px;display:flex;flex-direction:column;gap:9px}
+.brand{display:flex;align-items:baseline;gap:8px}
+.brand b{font-size:15px;font-weight:700}
+.brand span{font-size:11.5px;opacity:.8;font-family:var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
+.books{display:flex;gap:6px}
+.books button{flex:1;border:0;border-radius:999px;cursor:pointer;font-family:var(--f-ui);font-size:12.5px;font-weight:500;padding:7px 4px;background:rgba(255,255,255,.22);color:#fff}
+.books button[aria-selected="true"]{background:#fff;color:var(--spot);font-weight:700}
+.days{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.days::-webkit-scrollbar{display:none}
+.days button{flex:0 0 auto;border:0;border-radius:8px;cursor:pointer;font-family:var(--f-mono);font-size:12px;padding:6px 9px;background:rgba(255,255,255,.18);color:#fff;white-space:nowrap}
+.days button[aria-current="true"]{background:#fff;color:var(--spot);font-weight:700}
+.days button.scored::after{content:attr(data-sc);margin-left:4px;font-size:10px;opacity:.85}
+
+main{padding-left:var(--gut);padding-right:var(--gut-r);padding-block:14px 44px;display:flex;flex-direction:column;gap:14px;max-width:560px;margin:0 auto}
+.meta{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.meta em{font-style:normal;font-family:var(--f-mono);font-size:11.5px;color:var(--spot);letter-spacing:.06em}
+.meta .t{color:var(--mut);font-size:13px}
+.meta .num{margin-left:auto;font-family:var(--f-mono);font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.prog{height:3px;border-radius:2px;background:var(--line);overflow:hidden;margin-top:-10px}
+.prog i{display:block;height:100%;background:var(--spot-fill);transition:width .25s}
+
+.card{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:16px 15px;display:flex;flex-direction:column;gap:13px}
+.kind{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.07em;color:var(--spot);background:var(--spot-tint);border-radius:5px;padding:3px 7px;align-self:flex-start}
+.ask{margin:0;font-size:13px;color:var(--mut)}
+.qs{margin:0;font-family:var(--f-word);font-size:17px;line-height:1.55}
+.qs strong{color:var(--spot);font-weight:600;border-bottom:2px solid var(--spot-tint)}
+.qw{margin:0;font-family:var(--f-word);font-size:26px;font-weight:600;color:var(--spot);text-align:center;padding-block:6px}
+
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{
+  text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--fg);
+  border-radius:10px;padding:11px 13px;font-family:var(--f-ui);font-size:14.5px;cursor:pointer;
+  display:flex;gap:9px;align-items:flex-start;
+}
+.opt .mk{flex:0 0 auto;font-family:var(--f-mono);font-size:11.5px;color:var(--faint);padding-top:2px}
+.opt.en{font-family:var(--f-word);font-size:15px}
+.opt:hover{border-color:var(--spot)}
+.opt[aria-pressed="true"]{border-color:var(--spot);background:var(--spot-tint)}
+.opt.right{border-color:var(--ok);background:var(--ok-t);color:var(--ok)}
+.opt.wrong{border-color:var(--no);background:var(--no-t);color:var(--no)}
+.opt:disabled{cursor:default}
+.opt:focus-visible,.typein:focus-visible,.acts button:focus-visible,
+.books button:focus-visible,.days button:focus-visible{outline:2px solid var(--spot);outline-offset:2px}
+
+.slots{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+.slot{width:22px;height:34px;border-bottom:2px solid var(--line);font-family:var(--f-mono);font-size:19px;font-weight:500;display:grid;place-items:center}
+.slot.given{color:var(--faint);border-bottom-color:var(--faint)}
+.slot.fill{border-bottom-color:var(--spot)}
+.card.right .slot{color:var(--ok);border-bottom-color:var(--ok)}
+.card.wrong .slot{color:var(--no);border-bottom-color:var(--no)}
+.typein{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:11px 13px;font-family:var(--f-mono);font-size:17px;text-align:center;letter-spacing:.06em}
+
+.verdict{min-height:20px;font-size:13.5px;text-align:center;font-weight:500}
+.verdict.right{color:var(--ok)}
+.verdict.wrong{color:var(--no)}
+.trans{margin:0;font-size:12.5px;color:var(--mut);text-align:center}
+.acts{display:flex;gap:8px}
+.acts button{flex:1;border-radius:10px;padding:11px 6px;font-family:var(--f-ui);font-size:13.5px;cursor:pointer;border:1px solid var(--line);background:var(--surf);color:var(--mut)}
+.acts button.go{background:var(--spot-fill);border-color:var(--spot-fill);color:#fff;font-weight:700}
+.acts button:disabled{opacity:.45;cursor:default}
+
+.sheet{display:flex;flex-direction:column;gap:7px}
+.sheet h2{margin:0;font-size:12.5px;font-weight:500;color:var(--mut)}
+.marks{display:flex;flex-wrap:wrap;gap:4px}
+.mkb{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font-family:var(--f-mono);font-size:10.5px;border:1px solid var(--line);color:var(--faint);background:var(--surf)}
+.mkb.right{background:var(--ok-t);border-color:var(--ok);color:var(--ok)}
+.mkb.wrong{background:var(--no-t);border-color:var(--no);color:var(--no)}
+.mkb.now{border-color:var(--spot);color:var(--spot);font-weight:700}
+
+.done{background:var(--spot-tint);border-radius:var(--r);padding:18px 16px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center}
+.done b{font-size:28px;font-family:var(--f-mono);color:var(--spot)}
+.done p{margin:0;font-size:13.5px;color:var(--mut)}
+.recap{width:100%;display:flex;flex-direction:column;gap:6px;text-align:left}
+.rc{background:var(--surf);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:12.5px}
+.rc b{font-family:var(--f-word);font-size:14px;color:var(--no)}
+.rc span{color:var(--mut)}
+.foot{color:var(--faint);font-size:11.5px;text-align:center;padding-top:14px;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><b id="ttl">미니 퀴즈</b><span id="sub">Mini Quiz</span></div>
+    <div class="books" id="books" role="tablist" aria-label="묶음"></div>
+    <div class="days" id="days" role="tablist" aria-label="회차"></div>
+  </div>
+</header>
+
+<main id="main"><p class="foot">불러오는 중입니다.</p></main>
+
+<script id="DATA" type="application/json">{"tests":[{"kind":"REVIEW","no":1,"range":"DAY 01-07","label":"DAY 01-07 · 20문항","bank":["academic record","appraisal","class","course plan","evaluate","graduates","grant","hand in","meeting","term","training"],"items":[{"no":"1","type":"B 동의어","q":"She won a full scholarship that covered her tuition and living expenses.","a":"grant","w":"scholarship","kr":"그녀는 등록금과 생활비를 모두 충당하는 전액 장학금을 받았다."},{"no":"2","type":"B 동의어","q":"I am taking five courses this semester.","a":"term","w":"semester","kr":"나는 이번 학기에 다섯 과목을 듣고 있다."},{"no":"3","type":"B 동의어","q":"Only twelve students can join the writing seminar.","a":"class","w":"seminar","kr":"글쓰기 세미나에는 학생 열두 명만 들어올 수 있다."},{"no":"4","type":"B 동의어","q":"Please submit your application before the deadline on Friday.","a":"hand in","w":"submit","kr":"금요일 마감 전에 지원서를 제출해 주기 바란다."},{"no":"5","type":"B 동의어","q":"The professor posted the syllabus on the course website.","a":"course plan","w":"syllabus","kr":"교수님이 강의 계획서를 강좌 웹사이트에 올렸다."},{"no":"6","type":"B 동의어","q":"Please request an official transcript from the registrar.","a":"academic record","w":"transcript","kr":"교무처에 공식 성적 증명서를 요청하기 바란다."},{"no":"7","type":"B 동의어","q":"The university invited its alumni to the annual homecoming event.","a":"graduates","w":"alumnus","kr":"그 대학은 연례 홈커밍 행사에 동문들을 초대했다."},{"no":"8","type":"B 동의어","q":"The committee will assess each proposal before making a decision.","a":"evaluate","w":"assess","kr":"위원회는 결정을 내리기 전에 각 제안서를 평가할 것이다."},{"no":"9","type":"C 빈칸","q":"The first training ses____ starts at nine in the morning.","a":"session","w":"","kr":"첫 번째 교육 시간은 오전 아홉 시에 시작한다."},{"no":"10","type":"C 빈칸","q":"The photography work____ meets every Saturday morning.","a":"workshop","w":"","kr":"사진 강습회는 매주 토요일 아침에 모인다."},{"no":"11","type":"C 빈칸","q":"This app is compa_____ with older phones.","a":"compatible","w":"","kr":"이 앱은 구형 휴대폰과 호환된다."},{"no":"12","type":"C 빈칸","q":"Scholars still debate the autho_____ of the ancient text.","a":"authorship","w":"","kr":"학자들은 그 고대 문헌의 저작자 신원을 두고 여전히 논쟁한다."},{"no":"13","type":"A 뜻쓰기","q":"cite","a":"근거로 인용하다","w":"cite","kr":""},{"no":"14","type":"A 뜻쓰기","q":"concentrate","a":"집중하다","w":"concentrate","kr":""},{"no":"15","type":"A 뜻쓰기","q":"enroll","a":"등록하다, 수강 신청하다","w":"enroll","kr":""},{"no":"16","type":"A 뜻쓰기","q":"derivative","a":"도함수, 미분","w":"derivative","kr":""},{"no":"17","type":"A 뜻쓰기","q":"electromagnetism","a":"전자기학","w":"electromagnetism","kr":""},{"no":"18","type":"A 뜻쓰기","q":"achievable","a":"달성 가능한, 실현 가능한","w":"achievable","kr":""},{"no":"19","type":"A 뜻쓰기","q":"intramural","a":"교내의, 교내에서 열리는","w":"intramural","kr":""},{"no":"20","type":"A 뜻쓰기","q":"midterm","a":"중간고사","w":"midterm","kr":""}]},{"kind":"REVIEW","no":2,"range":"DAY 08-14","label":"DAY 08-14 · 20문항","bank":["admirer","amusement","cleaning","director","disruption","donation drive","engrossing","legacy","panelist","participate","recognize"],"items":[{"no":"1","type":"B 동의어","q":"Volunteers gathered for a weekend clean-up of the city park.","a":"cleaning","w":"clean-up","kr":"자원봉사자들이 도시 공원 청소를 위해 주말에 모였다."},{"no":"2","type":"B 동의어","q":"The loud disturbance interrupted the evening lecture.","a":"disruption","w":"disturbance","kr":"시끄러운 소란이 저녁 강의를 방해했다."},{"no":"3","type":"B 동의어","q":"The festival offers live entertainment throughout the weekend.","a":"amusement","w":"entertainment","kr":"그 축제는 주말 내내 라이브 공연을 제공한다."},{"no":"4","type":"B 동의어","q":"I decided to enter the school baking contest.","a":"participate","w":"enter","kr":"나는 학교 제빵 대회에 참가하기로 했다."},{"no":"5","type":"B 동의어","q":"He's a huge fan of that jazz band.","a":"admirer","w":"fan","kr":"그는 그 재즈 밴드의 열렬한 팬이다."},{"no":"6","type":"B 동의어","q":"The young filmmaker won an award at the festival.","a":"director","w":"filmmaker","kr":"그 젊은 영화 제작자가 영화제에서 상을 받았다."},{"no":"7","type":"B 동의어","q":"The club organized a fundraising event to support local shelters.","a":"donation drive","w":"fundraising","kr":"그 동아리는 지역 보호소를 돕기 위해 모금 행사를 마련했다."},{"no":"8","type":"B 동의어","q":"The old town is celebrated for its rich cultural heritage.","a":"legacy","w":"heritage","kr":"그 옛 마을은 풍부한 문화유산으로 유명하다."},{"no":"9","type":"C 빈칸","q":"The ceremony will ho___ students who volunteered this year.","a":"honor","w":"","kr":"그 행사는 올해 봉사한 학생들을 기릴 것이다."},{"no":"10","type":"C 빈칸","q":"The museum's new exhibit offers an imme_____ experience using virtual reality.","a":"immersive","w":"","kr":"박물관의 새 전시는 가상현실을 활용한 몰입형 경험을 제공한다."},{"no":"11","type":"C 빈칸","q":"A professor will ju___ the science fair entries.","a":"judge","w":"","kr":"한 교수님이 과학 박람회 출품작을 심사할 것이다."},{"no":"12","type":"C 빈칸","q":"A famous scientist will deliver the key____ at this year's conference.","a":"keynote","w":"","kr":"유명한 과학자가 올해 학회에서 기조연설을 할 것이다."},{"no":"13","type":"A 뜻쓰기","q":"lineup","a":"구성, 출연진 명단","w":"lineup","kr":""},{"no":"14","type":"A 뜻쓰기","q":"medium","a":"표현 매체, 수단","w":"medium","kr":""},{"no":"15","type":"A 뜻쓰기","q":"concession","a":"매점 음식 판매","w":"concession","kr":""},{"no":"16","type":"A 뜻쓰기","q":"decoration","a":"장식물","w":"decoration","kr":""},{"no":"17","type":"A 뜻쓰기","q":"decorum","a":"지켜야 할 예의범절","w":"decorum","kr":""},{"no":"18","type":"A 뜻쓰기","q":"drop-in","a":"예약 없이 참여하는","w":"drop-in","kr":""},{"no":"19","type":"A 뜻쓰기","q":"enthusiast","a":"열성 팬","w":"enthusiast","kr":""},{"no":"20","type":"A 뜻쓰기","q":"episode","a":"드라마 한 회차","w":"episode","kr":""}]},{"kind":"REVIEW","no":3,"range":"DAY 15-21","label":"DAY 15-21 · 20문항","bank":["deceive","exchange","hurry","measure","mind","reach","reload","rue","run hot","sharpen","value"],"items":[{"no":"1","type":"B 동의어","q":"We used a short quiz to gauge the students' progress.","a":"measure","w":"gauge","kr":"우리는 학생들의 진척을 가늠하려고 짧은 퀴즈를 활용했다."},{"no":"2","type":"B 동의어","q":"Drivers should heed the warning signs near the construction site.","a":"mind","w":"heed","kr":"운전자들은 공사장 근처의 경고 표지판에 유의해야 한다."},{"no":"3","type":"B 동의어","q":"Athletes hone their skills through hours of daily practice.","a":"sharpen","w":"hone","kr":"운동선수들은 매일 몇 시간씩 연습하며 기량을 갈고닦는다."},{"no":"4","type":"B 동의어","q":"Vague wording in the syllabus can mislead students about the true deadline.","a":"deceive","w":"mislead","kr":"강의계획서의 모호한 문구는 학생들에게 실제 마감일에 대해 오해를 불러일으킬 수 있다."},{"no":"5","type":"B 동의어","q":"My laptop tends to overheat when I play games.","a":"run hot","w":"overheat","kr":"내 노트북은 게임을 하면 과열되는 경향이 있다."},{"no":"6","type":"B 동의어","q":"You won't regret signing up for that hiking trip.","a":"rue","w":"regret","kr":"그 등산 여행에 신청한 걸 후회하지 않을 것이다."},{"no":"7","type":"B 동의어","q":"Try to reinstall the app if it keeps crashing.","a":"reload","w":"reinstall","kr":"앱이 계속 멈추면 다시 설치해주세요."},{"no":"8","type":"B 동의어","q":"Don't rush through the questions on the final exam.","a":"hurry","w":"rush","kr":"기말시험 문제를 급하게 서둘러 풀지 마세요."},{"no":"9","type":"C 빈칸","q":"The two students decided to sw__ phone numbers after the class.","a":"swap","w":"","kr":"두 학생은 수업이 끝난 뒤 전화번호를 맞바꾸기로 했다."},{"no":"10","type":"C 빈칸","q":"We truly appre_____ your patience during the recent system upgrade.","a":"appreciate","w":"","kr":"최근 시스템 업그레이드 동안 보여 준 인내에 정말 감사하다."},{"no":"11","type":"C 빈칸","q":"The guests will arr___ at the hotel before noon.","a":"arrive","w":"","kr":"손님들은 정오 전에 호텔에 도착할 것이다."},{"no":"12","type":"C 빈칸","q":"Let's bo__ a table before the restaurant fills up.","a":"book","w":"","kr":"식당이 차기 전에 자리를 예약해요."},{"no":"13","type":"A 뜻쓰기","q":"charity","a":"자선 단체","w":"charity","kr":""},{"no":"14","type":"A 뜻쓰기","q":"connectivity","a":"연결성, 접속","w":"connectivity","kr":""},{"no":"15","type":"A 뜻쓰기","q":"block","a":"(명) 블록, 도로 구획 (동) 막다, 차단하다","w":"block","kr":""},{"no":"16","type":"A 뜻쓰기","q":"buzz","a":"화제, 관심","w":"buzz","kr":""},{"no":"17","type":"A 뜻쓰기","q":"cabin","a":"오두막, 별장","w":"cabin","kr":""},{"no":"18","type":"A 뜻쓰기","q":"crowd","a":"(동) 붐비다, 가득 채우다 (명) 군중, 인파","w":"crowd","kr":""},{"no":"19","type":"A 뜻쓰기","q":"direct","a":"직행의, 직접적인","w":"direct","kr":""},{"no":"20","type":"A 뜻쓰기","q":"donation","a":"기부품","w":"donation","kr":""}]},{"kind":"FINAL","no":1,"range":"DAY 01-21","label":"DAY 01-21 · 40문항","bank":["arrangement","assign","candidacy","delayed","dispute","enhancement","examiner","help","improve","manager","non-attendance","nuclear particle","personnel","poll","private","program","put back","treatise","undergrad"],"items":[{"no":"1","type":"B 동의어","q":"The professor published a detailed monograph on medieval trade routes.","a":"treatise","w":"monograph","kr":"그 교수는 중세 무역로에 관한 상세한 연구서를 출간했다."},{"no":"2","type":"B 동의어","q":"A neutron carries no electric charge inside the atomic nucleus.","a":"nuclear particle","w":"neutron","kr":"중성자는 원자핵 안에서 전하를 띠지 않는다."},{"no":"3","type":"B 동의어","q":"The tutor offers one-on-one sessions after class.","a":"private","w":"one-on-one","kr":"그 튜터는 수업 후에 일대일 수업을 제공한다."},{"no":"4","type":"B 동의어","q":"Volunteers help reshelve returned books at the end of each shift.","a":"put back","w":"reshelve","kr":"자원봉사자들이 교대 시간이 끝날 때마다 반납된 책을 다시 책꽂이에 꽂는 일을 도와준다."},{"no":"5","type":"B 동의어","q":"These workshops help you sharpen your writing skills.","a":"improve","w":"sharpen","kr":"이 워크숍은 글쓰기 실력을 갈고닦는 데 도움이 된다."},{"no":"6","type":"B 동의어","q":"Many undergraduates take part in summer research programs.","a":"undergrad","w":"undergraduate","kr":"많은 학부생이 여름 연구 프로그램에 참여한다."},{"no":"7","type":"B 동의어","q":"Let's review the agenda before the meeting officially begins.","a":"program","w":"agenda","kr":"회의가 공식적으로 시작되기 전에 안건을 검토해 봐요."},{"no":"8","type":"B 동의어","q":"Please submit your application before the deadline at the end of the month.","a":"candidacy","w":"application","kr":"이달 말 마감 전에 지원서를 제출해 주기 바란다."},{"no":"9","type":"B 동의어","q":"Trained staff will assist visitors with directions throughout the building.","a":"help","w":"assist","kr":"교육받은 직원이 건물 곳곳에서 방문객의 길 안내를 도울 것이다."},{"no":"10","type":"B 동의어","q":"We are running behind on the report and need more time.","a":"delayed","w":"behind","kr":"우리는 보고서가 밀려 있어서 시간이 더 필요하다."},{"no":"11","type":"B 동의어","q":"The museum staff will guide visitors through the new gallery this weekend.","a":"personnel","w":"staff","kr":"박물관 직원들이 이번 주말에 방문객들을 새 전시관으로 안내할 것이다."},{"no":"12","type":"B 동의어","q":"The software upgrade improved both speed and overall security.","a":"enhancement","w":"upgrade","kr":"그 소프트웨어 업그레이드는 속도와 전반적인 보안을 모두 개선했다."},{"no":"13","type":"B 동의어","q":"Repeated absence from class can lower your grade.","a":"non-attendance","w":"absence","kr":"수업에 반복적으로 결석하면 성적이 떨어질 수 있다."},{"no":"14","type":"B 동의어","q":"The school provides special accommodation for students with disabilities.","a":"arrangement","w":"accommodation","kr":"학교는 장애가 있는 학생들을 위해 특별한 편의를 제공한다."},{"no":"15","type":"B 동의어","q":"The system administrator will reset your password within the hour.","a":"manager","w":"administrator","kr":"시스템 관리자가 한 시간 안에 비밀번호를 재설정해 줄 것이다."},{"no":"16","type":"B 동의어","q":"The committee will allocate funds to each department fairly.","a":"assign","w":"allocate","kr":"위원회는 각 부서에 자금을 공정하게 배분할 것이다."},{"no":"17","type":"C 빈칸","q":"We sent a short sur___ to all the students.","a":"survey","w":"","kr":"우리는 모든 학생에게 짧은 설문 조사를 보냈다."},{"no":"18","type":"C 빈칸","q":"The financial ana____ reviewed the report before advising the company's board.","a":"analyst","w":"","kr":"그 재무 분석가는 회사 이사회에 조언하기 전에 보고서를 검토했다."},{"no":"19","type":"C 빈칸","q":"You can app___ the decision if you disagree with it.","a":"appeal","w":"","kr":"그 결정에 동의하지 않으면 이의를 제기할 수 있다."},{"no":"20","type":"C 빈칸","q":"The bo___ will vote on the new budget tomorrow.","a":"board","w":"","kr":"이사회는 내일 새 예산에 대해 표결할 것이다."},{"no":"21","type":"C 빈칸","q":"The club launched a camp____ to reduce plastic waste.","a":"campaign","w":"","kr":"동아리는 플라스틱 쓰레기를 줄이려는 캠페인을 시작했다."},{"no":"22","type":"C 빈칸","q":"Each cand_____ gave a short speech before the vote.","a":"candidate","w":"","kr":"각 후보자가 투표 전에 짧은 연설을 했다."},{"no":"23","type":"C 빈칸","q":"She is a cap____ leader who solves problems quickly.","a":"capable","w":"","kr":"그녀는 문제를 빠르게 해결하는 유능한 리더다."},{"no":"24","type":"C 빈칸","q":"She earned a teaching certif_______ after years of study.","a":"certification","w":"","kr":"그녀는 수년간의 공부 끝에 교사 자격 인증을 받았다."},{"no":"25","type":"A 뜻쓰기","q":"commission","a":"(명) 위원회 (동) 의뢰하다, 위촉하다","w":"commission","kr":""},{"no":"26","type":"A 뜻쓰기","q":"urgent","a":"긴급한","w":"urgent","kr":""},{"no":"27","type":"A 뜻쓰기","q":"webinar","a":"온라인 세미나","w":"webinar","kr":""},{"no":"28","type":"A 뜻쓰기","q":"accomplishment","a":"성취, 업적","w":"accomplishment","kr":""},{"no":"29","type":"A 뜻쓰기","q":"accounting","a":"회계","w":"accounting","kr":""},{"no":"30","type":"A 뜻쓰기","q":"appoint","a":"임명하다","w":"appoint","kr":""},{"no":"31","type":"A 뜻쓰기","q":"aspire","a":"열망하다, 지망하다","w":"aspire","kr":""},{"no":"32","type":"A 뜻쓰기","q":"brainstorm","a":"브레인스토밍하다, 아이디어를 짜내다","w":"brainstorm","kr":""},{"no":"33","type":"A 뜻쓰기","q":"bureaucracy","a":"관료주의, 행정 절차","w":"bureaucracy","kr":""},{"no":"34","type":"A 뜻쓰기","q":"comply","a":"따르다, 준수하다","w":"comply","kr":""},{"no":"35","type":"A 뜻쓰기","q":"confidential","a":"기밀의, 비밀의","w":"confidential","kr":""},{"no":"36","type":"A 뜻쓰기","q":"dismissal","a":"퇴출, 해임","w":"dismissal","kr":""},{"no":"37","type":"A 뜻쓰기","q":"documentation","a":"증빙 서류, 서류 작업","w":"documentation","kr":""},{"no":"38","type":"A 뜻쓰기","q":"entrepreneurial","a":"창업가적","w":"entrepreneurial","kr":""},{"no":"39","type":"A 뜻쓰기","q":"fabrication","a":"제작, 제조","w":"fabrication","kr":""},{"no":"40","type":"A 뜻쓰기","q":"mandatory","a":"의무적인","w":"mandatory","kr":""}]},{"kind":"REVIEW","no":4,"range":"DAY 22-28","label":"DAY 22-28 · 20문항","bank":["agreement","cultural","eviction","intercultural","jam","mental","popularization","shared","traditional","unified","unity"],"items":[{"no":"1","type":"B 동의어","q":"Aging can gradually impair the cognitive functions of the human brain.","a":"mental","w":"cognitive","kr":"노화는 인간 뇌의 인지 기능을 점진적으로 손상시킬 수 있다."},{"no":"2","type":"B 동의어","q":"Shared traditions strengthen social cohesion within a community.","a":"unity","w":"cohesion","kr":"공유된 전통은 공동체 내의 사회적 결속을 강화한다."},{"no":"3","type":"B 동의어","q":"The tribe relied on communal ownership of the surrounding forest.","a":"shared","w":"communal","kr":"그 부족은 주변 숲의 공동 소유에 의존했다."},{"no":"4","type":"B 동의어","q":"Traffic congestion in the city worsens during the morning rush.","a":"jam","w":"congestion","kr":"도시의 교통 정체는 아침 출근 시간에 더 심해진다."},{"no":"5","type":"B 동의어","q":"The committee reached a consensus after hours of careful deliberation.","a":"agreement","w":"consensus","kr":"위원회는 몇 시간의 신중한 논의 끝에 합의에 이르렀다."},{"no":"6","type":"B 동의어","q":"Conventional farming methods rely heavily on chemical fertilizers.","a":"traditional","w":"conventional","kr":"전통적인 농법은 화학 비료에 크게 의존한다."},{"no":"7","type":"B 동의어","q":"Cross-cultural studies reveal surprising similarities in how people express emotion.","a":"intercultural","w":"cross-cultural","kr":"비교문화 연구는 사람들이 감정을 표현하는 방식에 놀라운 유사점이 있음을 드러낸다."},{"no":"8","type":"B 동의어","q":"The democratization of technology has allowed small startups to compete with giants.","a":"popularization","w":"democratization","kr":"기술의 대중화는 작은 스타트업이 대기업과 경쟁할 수 있게 해 줬다."},{"no":"9","type":"C 빈칸","q":"Local laws proh____ fishing in the protected lake.","a":"prohibit","w":"","kr":"지역 법은 보호 호수에서의 낚시를 금지한다."},{"no":"10","type":"C 빈칸","q":"Rising rents caused the displa______ of many longtime residents.","a":"displacement","w":"","kr":"치솟는 임대료가 오랜 거주자들의 강제 이주를 초래했다."},{"no":"11","type":"C 빈칸","q":"The researcher used ethnog______ methods to study the community.","a":"ethnographic","w":"","kr":"연구자는 그 공동체를 연구하려고 민족지학적 방법을 썼다."},{"no":"12","type":"C 빈칸","q":"Existen_______ teaches that individuals must define their own purpose.","a":"Existentialism","w":"","kr":"실존주의는 개인이 스스로 목적을 정의해야 한다고 가르친다."},{"no":"13","type":"A 뜻쓰기","q":"heuristic","a":"발견법, 경험 기반 추론 원리","w":"heuristic","kr":""},{"no":"14","type":"A 뜻쓰기","q":"homophily","a":"동종 선호 (비슷한 사람끼리 어울리는 경향)","w":"homophily","kr":""},{"no":"15","type":"A 뜻쓰기","q":"inequality","a":"불평등","w":"inequality","kr":""},{"no":"16","type":"A 뜻쓰기","q":"comprehension","a":"이해, 이해력","w":"comprehension","kr":""},{"no":"17","type":"A 뜻쓰기","q":"confidentiality","a":"기밀성, 비밀 유지","w":"confidentiality","kr":""},{"no":"18","type":"A 뜻쓰기","q":"confrontation","a":"서로 맞서는 대립","w":"confrontation","kr":""},{"no":"19","type":"A 뜻쓰기","q":"contentment","a":"만족감","w":"contentment","kr":""},{"no":"20","type":"A 뜻쓰기","q":"deliberation","a":"숙고, 심사숙고","w":"deliberation","kr":""}]},{"kind":"REVIEW","no":5,"range":"DAY 29-35","label":"DAY 29-35 · 20문항","bank":["brewing","drug science","feathers","fertilization","microbial community","non-surgical","root-fungal","salve","secretion","sun-tracking","suppress"],"items":[{"no":"1","type":"B 동의어","q":"The wounded tree released a sticky exudate that sealed the bark.","a":"secretion","w":"exudate","kr":"상처 난 나무는 껍질을 봉합하는 끈적한 삼출물을 분비했다."},{"no":"2","type":"B 동의어","q":"Fermentation turns sugar into alcohol during winemaking.","a":"brewing","w":"fermentation","kr":"발효는 와인을 만드는 동안 당을 알코올로 바꾼다."},{"no":"3","type":"B 동의어","q":"Young sunflowers are heliotropic, turning their heads to follow the sun.","a":"sun-tracking","w":"heliotropic","kr":"어린 해바라기는 향일성이기에 머리를 돌려 해를 따라간다."},{"no":"4","type":"B 동의어","q":"Cold temperatures inhibit the growth of many bacterial species.","a":"suppress","w":"inhibit","kr":"낮은 온도는 여러 세균 종의 성장을 억제한다."},{"no":"5","type":"B 동의어","q":"Researchers are studying how the gut microbiome influences human digestion and mood.","a":"microbial community","w":"microbiome","kr":"연구자들은 장내 미생물 군집이 인간의 소화와 기분에 어떻게 영향을 미치는지 연구하고 있다."},{"no":"6","type":"B 동의어","q":"Mycorrhizal fungi help plant roots absorb water and nutrients efficiently.","a":"root-fungal","w":"mycorrhizal","kr":"균근 곰팡이는 식물 뿌리가 물과 영양분을 효율적으로 흡수하도록 도와준다."},{"no":"7","type":"B 동의어","q":"Doctors prefer non-invasive imaging because it spares patients from surgery.","a":"non-surgical","w":"non-invasive","kr":"의사들은 환자가 수술을 피할 수 있어서 비침습적 영상 검사를 선호한다."},{"no":"8","type":"B 동의어","q":"Ancient healers applied a soothing ointment to treat minor burns.","a":"salve","w":"ointment","kr":"고대 치료사들은 가벼운 화상을 치료하려고 진정 연고를 발랐다."},{"no":"9","type":"C 빈칸","q":"Students of pharma______ learn how various drugs affect the human body.","a":"pharmacology","w":"","kr":"약리학을 공부하는 학생들은 다양한 약물이 인체에 어떻게 작용하는지 배운다."},{"no":"10","type":"C 빈칸","q":"Plants photosy________ by converting sunlight into chemical energy.","a":"photosynthesize","w":"","kr":"식물은 햇빛을 화학 에너지로 전환하여 광합성한다."},{"no":"11","type":"C 빈칸","q":"Male peacocks display brilliant plu____ to attract potential mates.","a":"plumage","w":"","kr":"수컷 공작은 잠재적 짝을 유혹하기 위해 화려한 깃털을 펼쳐 보인다."},{"no":"12","type":"C 빈칸","q":"Bees play a crucial role in the polli______ of many crops.","a":"pollination","w":"","kr":"벌은 많은 작물의 수분에 결정적인 역할을 한다."},{"no":"13","type":"A 뜻쓰기","q":"premature","a":"조기의, 때 이른","w":"premature","kr":""},{"no":"14","type":"A 뜻쓰기","q":"process","a":"(동) 처리하다, 가공하다 (명) 과정","w":"process","kr":""},{"no":"15","type":"A 뜻쓰기","q":"accumulate","a":"축적하다, 쌓이다","w":"accumulate","kr":""},{"no":"16","type":"A 뜻쓰기","q":"allocation","a":"배분, 할당","w":"allocation","kr":""},{"no":"17","type":"A 뜻쓰기","q":"amplify","a":"증폭시키다, 키우다","w":"amplify","kr":""},{"no":"18","type":"A 뜻쓰기","q":"anomaly","a":"이상, 변칙","w":"anomaly","kr":""},{"no":"19","type":"A 뜻쓰기","q":"assert","a":"단언하다, 주장하다","w":"assert","kr":""},{"no":"20","type":"A 뜻쓰기","q":"buffer","a":"(명) 완충재, 완충 장치 (동) 완충하다, 충격을 줄이다","w":"buffer","kr":""}]},{"kind":"REVIEW","no":6,"range":"DAY 36-42","label":"DAY 36-42 · 20문항","bank":["advocate","domain","extend","limit","measure","notable","relief","rethink","reuse","revival","thoroughness"],"items":[{"no":"1","type":"B 동의어","q":"Excessive irrigation can prolong root rot in greenhouse crops by keeping the soil saturated.","a":"extend","w":"prolong","kr":"과도한 관개는 토양을 계속 포화 상태로 유지해 온실 작물의 뿌리썩음을 오랜 기간 지속시킬 수 있다."},{"no":"2","type":"B 동의어","q":"She is a prominent scientist in the field of biology.","a":"notable","w":"prominent","kr":"그녀는 생물학 분야에서 두드러진 과학자다."},{"no":"3","type":"B 동의어","q":"A leading proponent of the reform defended the policy before the committee.","a":"advocate","w":"proponent","kr":"그 개혁의 주요 지지자가 위원회 앞에서 그 정책을 옹호했다."},{"no":"4","type":"B 동의어","q":"It is difficult to quantify the impact of education on happiness.","a":"measure","w":"quantify","kr":"교육이 행복에 미치는 영향을 수치로 측정하기는 어렵다."},{"no":"5","type":"B 동의어","q":"Quantum mechanics opened an entirely new realm of physical inquiry.","a":"domain","w":"realm","kr":"양자역학은 물리학 탐구의 완전히 새로운 영역을 열었다."},{"no":"6","type":"B 동의어","q":"Regulations restrict the amount of pollutants factories may release.","a":"limit","w":"restrict","kr":"규제는 공장이 배출할 수 있는 오염 물질의 양을 제한한다."},{"no":"7","type":"B 동의어","q":"The study was praised for its methodological rigor.","a":"thoroughness","w":"rigor","kr":"그 연구는 방법론적 엄밀함으로 칭찬받았다."},{"no":"8","type":"B 동의어","q":"The director sought to reimagine the classic story for modern audiences.","a":"rethink","w":"reimagine","kr":"그 감독은 고전 이야기를 현대 관객을 위해 재구상하려 했다."},{"no":"9","type":"C 빈칸","q":"The architects repu_____ old factories into modern apartments.","a":"repurpose","w":"","kr":"그 건축가들은 오래된 공장을 현대식 아파트로 전환시킨다."},{"no":"10","type":"C 빈칸","q":"The afternoon shade offered a brief res____ from the heat.","a":"respite","w":"","kr":"오후의 그늘은 더위로부터 잠깐의 휴식을 제공했다."},{"no":"11","type":"C 빈칸","q":"Scholars noted a resur_____ of interest in classical philosophy.","a":"resurgence","w":"","kr":"학자들은 고전 철학에 대한 관심의 부활을 주목했다."},{"no":"12","type":"C 빈칸","q":"Companies must ret____ workers whose jobs are replaced by automation.","a":"retrain","w":"","kr":"기업은 자동화로 일자리가 대체되는 노동자들을 재교육해야 한다."},{"no":"13","type":"A 뜻쓰기","q":"safeguard","a":"보호하다, 지키다","w":"safeguard","kr":""},{"no":"14","type":"A 뜻쓰기","q":"scrutinize","a":"면밀히 조사하다","w":"scrutinize","kr":""},{"no":"15","type":"A 뜻쓰기","q":"standardize","a":"표준화하다","w":"standardize","kr":""},{"no":"16","type":"A 뜻쓰기","q":"strategically","a":"전략적으로","w":"strategically","kr":""},{"no":"17","type":"A 뜻쓰기","q":"suppress","a":"억제하다, 막다","w":"suppress","kr":""},{"no":"18","type":"A 뜻쓰기","q":"synthesis","a":"종합, 통합","w":"synthesis","kr":""},{"no":"19","type":"A 뜻쓰기","q":"tailor","a":"맞추다, 조정하다","w":"tailor","kr":""},{"no":"20","type":"A 뜻쓰기","q":"transcend","a":"초월하다, 뛰어넘다","w":"transcend","kr":""}]},{"kind":"FINAL","no":2,"range":"DAY 22-42","label":"DAY 22-42 · 40문항","bank":["available","challenge","composure","disadvantaged","discrepancy","division","fatalism","helpful","man-made","moral","object","plentiful","popularize","rearing","statistical","traditional","unplug","uproot","welfarism"],"items":[{"no":"1","type":"B 동의어","q":"Online courses have helped democratize access to higher education.","a":"popularize","w":"democratize","kr":"온라인 강좌는 고등 교육에 대한 접근을 대중화하는 데 도움을 주었다."},{"no":"2","type":"B 동의어","q":"Rapid demographic shifts reshaped the city within a single generation.","a":"statistical","w":"demographic","kr":"급격한 인구 통계적 변화가 한 세대 만에 그 도시를 바꿔 놓았다."},{"no":"3","type":"B 동의어","q":"Determinism holds that every event is caused by prior conditions.","a":"fatalism","w":"determinism","kr":"결정론은 모든 사건이 이전 조건에 의해 야기된다고 본다."},{"no":"4","type":"B 동의어","q":"The author rejects the simple dichotomy between nature and culture.","a":"division","w":"dichotomy","kr":"저자는 자연과 문화 사이의 단순한 이분법을 거부한다."},{"no":"5","type":"B 동의어","q":"Remember to disconnect the device from the network before you reset it.","a":"unplug","w":"disconnect","kr":"기기를 초기화하기 전에 네트워크에서 연결을 끊는 걸 잊지 마세요."},{"no":"6","type":"B 동의어","q":"The study revealed a significant disparity in income between regions.","a":"discrepancy","w":"disparity","kr":"그 연구는 지역 간 소득의 상당한 격차를 드러냈다."},{"no":"7","type":"B 동의어","q":"Rising rents can displace families who have lived in the neighborhood for decades.","a":"uproot","w":"displace","kr":"치솟는 임대료는 그 동네에서 수십 년 살아온 가족들을 쫓아낼 수 있다."},{"no":"8","type":"B 동의어","q":"Several scientists dispute the accuracy of the new findings.","a":"challenge","w":"dispute","kr":"여러 과학자가 그 새 연구 결과의 정확성에 이의를 제기한다."},{"no":"9","type":"B 동의어","q":"Several committee members chose to dissent openly rather than approve the flawed proposal.","a":"object","w":"dissent","kr":"몇몇 위원회 위원들은 결함 있는 제안을 승인하기보다 공개적으로 반대했다."},{"no":"10","type":"B 동의어","q":"She faced the harsh criticism with remarkable equanimity.","a":"composure","w":"equanimity","kr":"그녀는 가혹한 비판을 놀라운 평정심으로 마주했다."},{"no":"11","type":"B 동의어","q":"The clinic provides care to underserved rural communities.","a":"disadvantaged","w":"underserved","kr":"그 진료소는 서비스가 부족한 시골 지역사회에 의료를 제공한다."},{"no":"12","type":"B 동의어","q":"Her strict upbringing shaped many of her later moral values.","a":"rearing","w":"upbringing","kr":"그녀가 받은 엄격한 가정 교육은 훗날의 도덕적 가치관 다수를 형성했다."},{"no":"13","type":"B 동의어","q":"Utilitarianism judges an action by the total happiness it produces.","a":"welfarism","w":"utilitarianism","kr":"공리주의는 어떤 행동을 그것이 만들어 내는 총 행복으로 판단한다."},{"no":"14","type":"B 동의어","q":"The philosopher argued that a virtuous life leads to lasting happiness.","a":"moral","w":"virtuous","kr":"그 철학자는 덕이 있는 삶이 지속적인 행복으로 이어진다고 주장했다."},{"no":"15","type":"B 동의어","q":"Sunlight is an abundant and largely untapped energy source.","a":"plentiful","w":"abundant","kr":"햇빛은 풍부하면서도 대체로 활용되지 않은 에너지원이다."},{"no":"16","type":"B 동의어","q":"The internet has made vast amounts of information accessible to ordinary people.","a":"available","w":"accessible","kr":"인터넷은 방대한 양의 정보를 일반 사람들이 이용하기 쉽게 만들었다."},{"no":"17","type":"C 빈칸","q":"Researchers created an artif_____ environment to test the plants.","a":"artificial","w":"","kr":"연구자들은 식물을 시험하기 위해 인공적인 환경을 만들었다."},{"no":"18","type":"C 빈칸","q":"Regular exercise is highly benef_____ for both physical and mental health.","a":"beneficial","w":"","kr":"규칙적인 운동은 신체 건강과 정신 건강 모두에 매우 이롭다."},{"no":"19","type":"C 빈칸","q":"Conven______ farming methods rely heavily on chemical fertilizers.","a":"Conventional","w":"","kr":"전통적인 농법은 화학 비료에 크게 의존한다."},{"no":"20","type":"C 빈칸","q":"Accurate measurement is cru____ to the success of the experiment.","a":"crucial","w":"","kr":"정확한 측정은 그 실험의 성공에 매우 중요하다."},{"no":"21","type":"C 빈칸","q":"Restoring the fresco required a deli____ and patient technique.","a":"delicate","w":"","kr":"그 프레스코화를 복원하려면 섬세하고 인내심 있는 기법이 필요했다."},{"no":"22","type":"C 빈칸","q":"Excessive stress can be detri______ to long-term physical health.","a":"detrimental","w":"","kr":"과도한 스트레스는 장기적인 신체 건강에 해로울 수 있다."},{"no":"23","type":"C 빈칸","q":"The two species are dist____ despite their similar appearance.","a":"distinct","w":"","kr":"그 두 종은 비슷한 외형에도 불구하고 뚜렷이 다르다."},{"no":"24","type":"C 빈칸","q":"The university attracts a div____ population of students from many countries.","a":"diverse","w":"","kr":"그 대학은 여러 나라에서 온 다양한 학생 집단을 끌어모은다."},{"no":"25","type":"A 뜻쓰기","q":"dominant","a":"지배적인, 우세한","w":"dominant","kr":""},{"no":"26","type":"A 뜻쓰기","q":"vital","a":"필수적인, 매우 중요한","w":"vital","kr":""},{"no":"27","type":"A 뜻쓰기","q":"vulnerable","a":"취약한, 피해를 입기 쉬운","w":"vulnerable","kr":""},{"no":"28","type":"A 뜻쓰기","q":"adaptable","a":"적응 가능한, 융통성 있는","w":"adaptable","kr":""},{"no":"29","type":"A 뜻쓰기","q":"coherent","a":"일관된, 논리정연한","w":"coherent","kr":""},{"no":"30","type":"A 뜻쓰기","q":"compact","a":"소형의, 조밀한","w":"compact","kr":""},{"no":"31","type":"A 뜻쓰기","q":"constructive","a":"건설적인, 발전적인","w":"constructive","kr":""},{"no":"32","type":"A 뜻쓰기","q":"deliberate","a":"(형) 의도적인, 신중한 (동) 숙고하다","w":"deliberate","kr":""},{"no":"33","type":"A 뜻쓰기","q":"fragile","a":"부서지기 쉬운, 약한","w":"fragile","kr":""},{"no":"34","type":"A 뜻쓰기","q":"geometric","a":"기하학적인","w":"geometric","kr":""},{"no":"35","type":"A 뜻쓰기","q":"high-stakes","a":"이해관계가 큰, 중대한","w":"high-stakes","kr":""},{"no":"36","type":"A 뜻쓰기","q":"impermanent","a":"영구적이지 않은, 일시적인","w":"impermanent","kr":""},{"no":"37","type":"A 뜻쓰기","q":"indispensable","a":"필수 불가결한","w":"indispensable","kr":""},{"no":"38","type":"A 뜻쓰기","q":"insufficient","a":"불충분한, 부족한","w":"insufficient","kr":""},{"no":"39","type":"A 뜻쓰기","q":"intact","a":"온전한, 손상되지 않은","w":"intact","kr":""},{"no":"40","type":"A 뜻쓰기","q":"invaluable","a":"매우 귀중한","w":"invaluable","kr":""}]}]}</script>
+<script>
+(function(){
+  "use strict";
+  // MODE — quiz(미니 퀴즈) · review(복습 퀴즈) · rtest(REVIEW TEST) · ftest(FINAL TEST)
+  var MODE = "ftest";
+
+  var CFG={
+    quiz:{title:"미니 퀴즈",sub:"Mini Quiz",key:"mq",src:"data/quiz.json",
+          foot:"미니 퀴즈 1,008문항 · DAY 마다 24"},
+    review:{title:"복습 퀴즈",sub:"Review Quiz",key:"rq",src:"data/quiz.json",
+          foot:"앞서 외운 DAY 에서 20문항을 뽑습니다"},
+    rtest:{title:"REVIEW TEST",sub:"Review Test",key:"rt",src:"data/test.json",
+          foot:"REVIEW TEST 6회 · 회차마다 20문항"},
+    ftest:{title:"FINAL TEST",sub:"Final Test",key:"ft",src:"data/test.json",
+          foot:"FINAL TEST 2회 · 회차마다 40문항"}
+  };
+  var C=CFG[MODE];
+  var SET="novetoefl-"+C.key+"-set", SC="novetoefl-"+C.key+"-score";
+
+  var RAW=null, SETS=[], book=1, at=0, pos=0, picks=[], answered=false, items=[];
+  var saved=load(SET,{}), score=load(SC,{});
+
+  function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+  function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  function el(t,c,x){var n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n}
+  function pad(n){return String(n).padStart(2,"0")}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+  var $main=document.getElementById("main"), $days=document.getElementById("days"),
+      $books=document.getElementById("books");
+  document.getElementById("ttl").textContent=C.title;
+  document.getElementById("sub").textContent=C.sub;
+
+  var tag=document.getElementById("DATA"), rawtxt=tag?tag.textContent.trim():"";
+  (rawtxt ? Promise.resolve(JSON.parse(rawtxt))
+          : fetch(C.src).then(function(r){return r.json()})
+  ).then(function(j){ RAW=j; build(); }).catch(function(){
+    $main.innerHTML='<p class="foot">불러오지 못했습니다. 잠시 뒤 새로고침해 주세요.</p>';
+  });
+
+  /* 회차 목록을 만든다 — 모드마다 한 회차의 뜻이 다르다 */
+  function build(){
+    if(MODE==="quiz"||MODE==="review"){
+      SETS=RAW.days.map(function(d){
+        return {id:"d"+d.day, day:d.day, book:d.book,
+                label:"DAY "+pad(d.day), topic:d.topic,
+                bank:d.bank, items:d.items};
+      });
+      if(MODE==="review"){ SETS=SETS.filter(function(s){return s.day>1}) }
+    }else{
+      var kind = MODE==="rtest" ? "REVIEW" : "FINAL";
+      SETS=RAW.tests.filter(function(t){return t.kind===kind}).map(function(t){
+        // 실용(1~3회·FINAL 1) 과 학술(4~6회·FINAL 2) 로 가른다
+        return {id:t.kind+t.no, day:t.no,
+                book:(t.kind==="FINAL" ? t.no : (t.no>3?2:1)),
+                label:(t.kind==="REVIEW"?"REVIEW ":"FINAL ")+t.no,
+                topic:t.range, bank:t.bank, items:t.items};
+      });
+    }
+    if(saved.book)book=saved.book;
+    var i=SETS.map(function(s){return s.id}).indexOf(saved.id);
+    at = i>-1 ? i : firstOf(book);
+    buildBooks(); buildDays(); start();
+  }
+
+  function listOf(b){return SETS.filter(function(s){return s.book===b})}
+  function firstOf(b){var l=listOf(b);return l.length?SETS.indexOf(l[0]):0}
+
+  function buildBooks(){
+    $books.innerHTML="";
+    var names = (MODE==="rtest"||MODE==="ftest")
+      ? ["실용어휘","학술어휘"] : ["실용 · DAY 01–21","학술 · DAY 22–42"];
+    [1,2].forEach(function(b){
+      var n=listOf(b).length; if(!n) return;
+      var btn=el("button",null,names[b-1]);
+      btn.setAttribute("role","tab");
+      btn.setAttribute("aria-selected", b===book?"true":"false");
+      btn.onclick=function(){
+        if(book===b)return;
+        book=b; at=firstOf(b); persist(); buildBooks(); buildDays(); start();
+        window.scrollTo(0,0);
+      };
+      $books.appendChild(btn);
+    });
+  }
+
+  function buildDays(){
+    $days.innerHTML="";
+    var l=listOf(book);
+    if(l.length<2){ $days.hidden=true; return }
+    $days.hidden=false;
+    l.forEach(function(s){
+      var b=el("button",null,s.label);
+      b.setAttribute("role","tab");
+      b.setAttribute("aria-current", SETS[at]===s?"true":"false");
+      var sc=score[s.id];
+      if(sc){ b.classList.add("scored"); b.dataset.sc=sc.right+"/"+sc.of }
+      b.onclick=function(){at=SETS.indexOf(s);persist();start();window.scrollTo(0,0)};
+      $days.appendChild(b);
+    });
+    var c=$days.querySelector('[aria-current="true"]');
+    if(c)c.scrollIntoView({block:"nearest",inline:"center"});
+  }
+  function persist(){save(SET,{book:book,id:SETS[at]?SETS[at].id:""})}
+
+  /* 복습 퀴즈 — 앞선 DAY 전체에서 20문항을 뽑는다 (열 때마다 새로 뽑힌다).
+     DAY 23 이면 DAY 01~22 가 통째로 바구니가 된다. */
+  function makeItems(s){
+    if(MODE!=="review") return s.items.slice();
+    var flat=[];
+    RAW.days.forEach(function(d){
+      if(d.day>=s.day) return;
+      d.items.forEach(function(it){ flat.push({it:it, bank:d.bank}) });
+    });
+    shuffle(flat);
+    return flat.slice(0,20).map(function(x,i){
+      var o={}; for(var k in x.it) o[k]=x.it[k];
+      o.no=String(i+1); o._bank=x.bank; return o;
+    });
+  }
+
+  function start(){
+    var s=SETS[at]; if(!s)return;
+    items=makeItems(s); pos=0; picks=[]; answered=false;
+    buildDays(); render();
+  }
+
+  function meanPool(s){
+    var out=[];
+    items.forEach(function(it){ if(it.type.indexOf("A")===0 && it.a) out.push(it.a) });
+    if(out.length<4){
+      RAW.days && RAW.days.forEach(function(d){ d.items.forEach(function(it){
+        if(it.type.indexOf("A")===0 && it.a) out.push(it.a) }) });
+    }
+    return out;
+  }
+
+  function render(){
+    var s=SETS[at];
+    document.body.dataset.book=s.book;
+    $main.innerHTML="";
+    if(pos>=items.length) return finish(s);
+
+    var it=items[pos];
+    var m=el("div","meta");
+    m.appendChild(el("em",null,s.label));
+    m.appendChild(el("span","t",s.topic));
+    m.appendChild(el("span","num",(pos+1)+" / "+items.length));
+    $main.appendChild(m);
+    var pr=el("div","prog"), bi=el("i");
+    bi.style.width=(pos/items.length*100)+"%"; pr.appendChild(bi);
+    $main.appendChild(pr);
+
+    var card=el("div","card");
+    card.appendChild(el("span","kind",it.type));
+    var vd=el("p","verdict");
+    var tr=el("p","trans");
+    var acts=el("div","acts");
+    var go=el("button","go","확인");
+    var skip=el("button",null,"모르겠어요");
+    acts.appendChild(skip); acts.appendChild(go);
+
+    var getAnswer=null, lock=null;
+
+    if(it.type.indexOf("A")===0){
+      card.appendChild(el("p","ask","이 낱말의 뜻을 고르세요."));
+      card.appendChild(el("p","qw",it.q));
+      var pool=meanPool(s).filter(function(x){return x!==it.a});
+      var opts=shuffle(pool.slice()).slice(0,3).concat([it.a]);
+      opts=shuffle(opts);
+      var box=el("div","opts"); var btns=[];
+      opts.forEach(function(o,i){
+        var b=el("button","opt");
+        b.appendChild(el("span","mk","ABCD"[i]));
+        b.appendChild(el("span",null,o));
+        b.dataset.v=o;
+        b.setAttribute("aria-pressed","false");
+        b.onclick=function(){
+          if(answered)return;
+          btns.forEach(function(x){x.setAttribute("aria-pressed","false")});
+          b.setAttribute("aria-pressed","true");
+        };
+        btns.push(b); box.appendChild(b);
+      });
+      card.appendChild(box);
+      getAnswer=function(){
+        var s2=btns.filter(function(b){return b.getAttribute("aria-pressed")==="true"})[0];
+        return s2?s2.dataset.v:null;
+      };
+      lock=function(ok){
+        btns.forEach(function(b){
+          b.disabled=true;
+          if(b.dataset.v===it.a) b.classList.add("right");
+          else if(b.getAttribute("aria-pressed")==="true") b.classList.add("wrong");
+        });
+      };
+    }else if(it.type.indexOf("B")===0){
+      card.appendChild(el("p","ask","굵은 낱말을 바꿔 쓸 수 있는 말을 고르세요."));
+      var qs=el("p","qs"); qs.innerHTML=markWord(it.q, it.w); card.appendChild(qs);
+      var bank=(it._bank||s.bank||[]).filter(function(x){return x!==it.a});
+      var o2=shuffle(bank.slice()).slice(0,3).concat([it.a]);
+      o2=shuffle(o2);
+      var box2=el("div","opts"); var bt2=[];
+      o2.forEach(function(o,i){
+        var b=el("button","opt en");
+        b.appendChild(el("span","mk","ABCD"[i]));
+        b.appendChild(el("span",null,o));
+        b.dataset.v=o; b.setAttribute("aria-pressed","false");
+        b.onclick=function(){
+          if(answered)return;
+          bt2.forEach(function(x){x.setAttribute("aria-pressed","false")});
+          b.setAttribute("aria-pressed","true");
+        };
+        bt2.push(b); box2.appendChild(b);
+      });
+      card.appendChild(box2);
+      getAnswer=function(){
+        var s2=bt2.filter(function(b){return b.getAttribute("aria-pressed")==="true"})[0];
+        return s2?s2.dataset.v:null;
+      };
+      lock=function(){
+        bt2.forEach(function(b){
+          b.disabled=true;
+          if(b.dataset.v===it.a) b.classList.add("right");
+          else if(b.getAttribute("aria-pressed")==="true") b.classList.add("wrong");
+        });
+      };
+    }else{
+      card.appendChild(el("p","ask","빈칸에 들어갈 낱말의 철자를 채우세요."));
+      var qs3=el("p","qs"); qs3.innerHTML=esc(it.q).replace(/_+/g,function(u){
+        return '<strong>'+u+'</strong>' }); card.appendChild(qs3);
+      var inp=el("input","typein");
+      inp.type="text"; inp.id="in-"+s.id+"-"+pos;
+      inp.autocapitalize="off"; inp.autocorrect="off"; inp.spellcheck=false;
+      inp.setAttribute("autocomplete","off");
+      inp.placeholder="낱말 전체를 적으세요";
+      inp.setAttribute("aria-label","철자 입력");
+      card.appendChild(inp);
+      inp.addEventListener("keydown",function(e){if(e.key==="Enter")go.click()});
+      getAnswer=function(){return inp.value.trim()};
+      lock=function(){ inp.disabled=true };
+      setTimeout(function(){inp.focus()},30);
+    }
+
+    card.appendChild(vd); card.appendChild(tr); card.appendChild(acts);
+    $main.appendChild(card);
+
+    go.onclick=function(){
+      if(answered){ pos++; render(); return }
+      var got=getAnswer();
+      if(got===null||got===""){ vd.className="verdict"; vd.textContent="답을 고르거나 적어 주세요."; return }
+      grade(got);
+    };
+    skip.onclick=function(){ if(!answered) grade("") };
+
+    function grade(got){
+      var ok = norm(got)===norm(it.a);
+      answered=true; picks.push({ok:ok,it:it,got:got});
+      lock(ok);
+      card.classList.add(ok?"right":"wrong");
+      vd.className="verdict "+(ok?"right":"wrong");
+      vd.innerHTML = ok ? "맞았습니다" : ("정답은 <b>"+esc(it.a)+"</b> 입니다");
+      if(it.kr) tr.textContent=it.kr;
+      go.textContent = (pos+1>=items.length) ? "결과 보기" : "다음";
+      skip.disabled=true; go.focus();
+      paintSheet();
+    }
+
+    var sheet=el("div","sheet");
+    sheet.appendChild(el("h2",null,"답안지"));
+    var mk=el("div","marks"); mk.id="marks"; sheet.appendChild(mk);
+    $main.appendChild(sheet);
+    paintSheet();
+    $main.appendChild(el("p","foot",C.foot));
+
+    function paintSheet(){
+      var box=document.getElementById("marks"); if(!box)return;
+      box.innerHTML="";
+      for(var i=0;i<items.length;i++){
+        var c = i<picks.length ? (picks[i].ok?"mkb right":"mkb wrong")
+              : (i===pos?"mkb now":"mkb");
+        box.appendChild(el("span",c,String(i+1)));
+      }
+    }
+  }
+
+  function norm(s){return String(s).trim().toLowerCase().replace(/\s+/g," ")}
+
+  function markWord(sentence, word){
+    var safe=esc(sentence);
+    var stem=String(word||"").replace(/[^A-Za-z -]/g,"").trim();
+    if(!stem) return safe;
+    var parts=stem.split(/\s+/).filter(function(x){return x.length>2});
+    if(!parts.length) return safe;
+    parts.forEach(function(p){
+      safe=safe.replace(new RegExp("\\b("+p+"[a-z]*)\\b","i"),"<strong>$1</strong>");
+    });
+    return safe;
+  }
+
+  function finish(s){
+    var right=picks.filter(function(p){return p.ok}).length;
+    score[s.id]={right:right,of:items.length}; save(SC,score); buildDays();
+    var m=el("div","meta");
+    m.appendChild(el("em",null,s.label));
+    m.appendChild(el("span","t",s.topic));
+    $main.appendChild(m);
+
+    var box=el("div","done");
+    box.appendChild(el("b",null,right+" / "+items.length));
+    box.appendChild(el("p",null, right===items.length
+      ? "전부 맞았습니다." : "틀린 문항을 한 번 더 보고 가세요."));
+    var bad=picks.filter(function(p){return !p.ok});
+    if(bad.length){
+      var rc=el("div","recap");
+      bad.forEach(function(p){
+        var r=el("div","rc");
+        r.appendChild(el("b",null,p.it.a));
+        var txt=p.it.type.indexOf("A")===0 ? ("  "+p.it.q)
+              : (p.it.kr ? ("  "+p.it.kr) : "");
+        if(txt) r.appendChild(el("span",null,txt));
+        rc.appendChild(r);
+      });
+      box.appendChild(rc);
+    }
+    var acts=el("div","acts"); acts.style.width="100%";
+    var again=el("button","go",MODE==="review"?"새로 뽑아 풀기":"다시 풀기");
+    again.onclick=function(){start();window.scrollTo(0,0)};
+    acts.appendChild(again);
+    var l=listOf(book), i=l.indexOf(s);
+    if(i>-1 && i+1<l.length){
+      var nx=el("button",null,"다음 "+(MODE==="rtest"||MODE==="ftest"?"회차":"DAY"));
+      nx.onclick=function(){at=SETS.indexOf(l[i+1]);persist();start();window.scrollTo(0,0)};
+      acts.appendChild(nx);
+    }
+    box.appendChild(acts);
+    $main.appendChild(box);
+    $main.appendChild(el("p","foot",C.foot));
+  }
+})();
+</script>
